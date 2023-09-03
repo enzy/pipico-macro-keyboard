@@ -141,7 +141,7 @@ selectors = {
 modifier = keys[0]
 
 # Start on layer 1
-current_layer = 4
+current_layer = 3
 
 # The colours for each layer
 colours = {
