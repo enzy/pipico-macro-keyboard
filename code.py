@@ -21,18 +21,27 @@
 #             vol. up on row two
 #  * layer 4: white: sends mixxx controls
 
+# NOTES:
+# https://www.usb.org/sites/default/files/hutrr110-systemmicrophonemute.pdf
+
+import board
+import digitalio
 import time
-from pmk import PMK
-# from pmk.platform.keybow2040 import Keybow2040 as Hardware          # for Keybow 2040
-from pmk.platform.rgbkeypadbase import RGBKeypadBase as Hardware  # for Pico RGB Keypad Base
-
 import usb_hid
-from adafruit_hid.keyboard import Keyboard
-from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
-from adafruit_hid.keycode import Keycode
 
+from pmk import PMK
+from pmk.platform.rgbkeypadbase import RGBKeypadBase as Hardware # for Pico RGB Keypad Base
+
+import keyboard_layout_win_cz1
+from keycode_win_cz1 import Keycode
+from adafruit_hid.keyboard import Keyboard
 from adafruit_hid.consumer_control import ConsumerControl
 from adafruit_hid.consumer_control_code import ConsumerControlCode
+from adafruit_hid.system_control import SystemControl
+from adafruit_hid.system_control_code import SystemControlCode
+
+systemLed = digitalio.DigitalInOut(board.LED)
+systemLed.direction = digitalio.Direction.OUTPUT
 
 # Set up Keybow
 keybow = PMK(Hardware())
@@ -41,12 +50,11 @@ keys = keybow.keys
 keybow.led_sleep_enabled = True
 keybow.led_sleep_time = 5
 
-# Set up the keyboard and layout
 keyboard = Keyboard(usb_hid.devices)
-layout = KeyboardLayoutUS(keyboard)
+layout = keyboard_layout_win_cz1.KeyboardLayout(keyboard)
 
-# Set up consumer control (used to send media key presses)
 consumer_control = ConsumerControl(usb_hid.devices)
+system_control = SystemControl(usb_hid.devices)
 
 # Our layers. The key of item in the layer dictionary is the key number on
 # Keybow to map to, and the value is the key press to send.
@@ -54,66 +62,95 @@ consumer_control = ConsumerControl(usb_hid.devices)
 # Note that key 0 is reserved as the modifier
 
 # purple - numeric keypad
-layer_1 =     {4: Keycode.ZERO,
-               5: Keycode.ONE,
-               6: Keycode.FOUR,
-               7: Keycode.SEVEN,
-               8: Keycode.DELETE,
-               9: Keycode.TWO,
-               10: Keycode.FIVE,
-               11: Keycode.EIGHT,
-               12: Keycode.ENTER,
-               13: Keycode.THREE,
-               14: Keycode.SIX,
-               15: Keycode.NINE}
+layer_1 = {
+    4: (Keycode.ZERO,),
+    5: (Keycode.ONE,),
+    6: (Keycode.FOUR,),
+    7: (Keycode.SEVEN,),
+    8: (Keycode.DELETE,),
+    9: (Keycode.TWO,),
+    10: (Keycode.FIVE,),
+    11: (Keycode.EIGHT,),
+    12: (Keycode.ENTER,),
+    13: (Keycode.THREE,),
+    14: (Keycode.SIX,),
+    15: (Keycode.NINE,)
+}
 
 # blue - words
-layer_2 =     {7: "pack ",
-               11: "my ",
-               15: "box ",
-               6: "with ",
-               10: "five ",
-               14: "dozen ",
-               5: "liquor ",
-               9: "jugs "}
+layer_2 = {
+    7: "pack ",
+    11: "my ",
+    15: "box ",
+    6: "with ",
+    10: "five ",
+    14: "dozen ",
+    5: "liquor ",
+    9: "jugs "
+}
 
 # yellow - media controls
-layer_3 =     {6: ConsumerControlCode.VOLUME_DECREMENT,
-               7: ConsumerControlCode.SCAN_PREVIOUS_TRACK,
-               10: ConsumerControlCode.MUTE,
-               11: ConsumerControlCode.PLAY_PAUSE,
-               14: ConsumerControlCode.VOLUME_INCREMENT,
-               15: ConsumerControlCode.SCAN_NEXT_TRACK}
+layer_3 = {
+    3: ConsumerControlCode.RECORD, # 0xA9, # System Microphone Mute, under Keyboard HID
+    6: ConsumerControlCode.SCAN_PREVIOUS_TRACK,
+    9: ConsumerControlCode.VOLUME_DECREMENT,
+    8: ConsumerControlCode.MUTE,
+    10: ConsumerControlCode.PLAY_PAUSE,
+    11: ConsumerControlCode.VOLUME_INCREMENT,
+    14: ConsumerControlCode.SCAN_NEXT_TRACK
+}
 
 # white - mixxx
-layer_4 =     {2: Keycode.X,
-               5: Keycode.D,
-               7: Keycode.T,
-               8: Keycode.SPACE,
-               13: Keycode.L,
-               15: Keycode.Y}
+layer_4 = {
+    2: (Keycode.CONTROL, Keycode.SHIFT, Keycode.M),
+    5: (Keycode.D,),
+    7: (Keycode.T,),
+    8: (Keycode.SPACE,),
+    13: (Keycode.L,),
+    15: (Keycode.Y,)
+}
 
-layers =      {1: layer_1,
-               2: layer_2,
-               3: layer_3,
-               4: layer_4}
+# red - system control
+layer_5 = {
+    3: SystemControlCode.SYSTEM_MICROPHONE_MUTE,
+    4: SystemControlCode.SYSTEM_MAIN_MENU,
+    5: SystemControlCode.SYSTEM_APP_MENU,
+    6: SystemControlCode.SYSTEM_DISMISS_NOTIFICATION,
+    7: SystemControlCode.SYSTEM_DO_NOT_DISTURB,
+    8: SystemControlCode.SYSTEM_SETUP,
+    9: SystemControlCode.SYSTEM_SPEAKER_MUTE
+}
 
-selectors =   {1: keys[1],
-               2: keys[2],
-               3: keys[3],
-               4: keys[4]}
+layers = {
+    1: layer_1,
+    2: layer_2,
+    3: layer_3,
+    4: layer_4,
+    5: layer_5
+}
+
+selectors = {
+    1: keys[1],
+    2: keys[2],
+    3: keys[3],
+    4: keys[4],
+    5: keys[5],
+}
 
 # Define the modifier key and layer selector keys
 modifier = keys[0]
 
 # Start on layer 1
-current_layer = 1
+current_layer = 4
 
 # The colours for each layer
-colours = {1: (255, 0, 255),
-           2: (0, 255, 255),
-           3: (255, 255, 0),
-           4: (128, 128, 128)}
+colours = {
+    1: (255, 0, 255),
+    2: (0, 255, 255),
+    3: (255, 255, 0),
+    4: (128, 128, 128),
+    5: (255, 0, 0)
+}
 
 layer_keys = range(0, 16)
 
@@ -204,26 +241,30 @@ while True:
             key_press = layers[current_layer][k]
             keys[k].set_led(*colours[current_layer])
 
-
             # If the key hasn't just fired (prevents refiring)
             if not fired:
                 fired = True
+                systemLed.value = True
+
 
                 # Send the right sort of key press and set debounce for each
                 # layer accordingly (layer 2 needs a long debounce)
                 if current_layer == 1 or current_layer == 4:
                     debounce = short_debounce
-                    keyboard.send(key_press)
+                    keyboard.send(*key_press)
                 elif current_layer == 2:
                     debounce = long_debounce
                     layout.write(key_press)
                 elif current_layer == 3:
                     debounce = short_debounce
                     consumer_control.send(key_press)
+                elif current_layer == 5:
+                    debounce = short_debounce
+                    system_control.send(key_press)
 
                 keys[k].set_led(0, 0, 0)
-
 
     # If enough time has passed, reset the fired variable
     if fired and time.monotonic() - keybow.time_of_last_press > debounce:
         fired = False
+        systemLed.value = False
