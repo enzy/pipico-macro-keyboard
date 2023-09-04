@@ -30,7 +30,8 @@ import time
 import usb_hid
 
 from pmk import PMK
-from pmk.platform.rgbkeypadbase import RGBKeypadBase as Hardware # for Pico RGB Keypad Base
+# for Pico RGB Keypad Base
+from pmk.platform.rgbkeypadbase import RGBKeypadBase as Hardware
 
 import keyboard_layout_win_cz1
 from keycode_win_cz1 import Keycode
@@ -91,7 +92,7 @@ layer_2 = {
 
 # yellow - media controls
 layer_3 = {
-    3: ConsumerControlCode.RECORD, # 0xA9, # System Microphone Mute, under Keyboard HID
+    3: ConsumerControlCode.RECORD,
     6: ConsumerControlCode.SCAN_PREVIOUS_TRACK,
     9: ConsumerControlCode.VOLUME_DECREMENT,
     8: ConsumerControlCode.MUTE,
@@ -144,13 +145,15 @@ modifier = keys[0]
 current_layer = 3
 
 # The colours for each layer
-colours = {
+brightness = 0.1
+raw_colours = {
     1: (255, 0, 255),
     2: (0, 255, 255),
     3: (255, 255, 0),
     4: (128, 128, 128),
     5: (255, 0, 0)
 }
+colours = {k: tuple(int(val * brightness) for val in v) for k, v in raw_colours.items()}
 
 layer_keys = range(0, 16)
 
@@ -245,7 +248,6 @@ while True:
             if not fired:
                 fired = True
                 systemLed.value = True
-
 
                 # Send the right sort of key press and set debounce for each
                 # layer accordingly (layer 2 needs a long debounce)
