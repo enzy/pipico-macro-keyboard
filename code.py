@@ -242,7 +242,7 @@ while True:
     for k in layers[current_layer].keys():
         if keys[k].pressed:
             key_press = layers[current_layer][k]
-            keys[k].set_led(*colours[current_layer])
+            #keys[k].set_led(*colours[current_layer])
 
             # If the key hasn't just fired (prevents refiring)
             if not fired:
@@ -264,7 +264,7 @@ while True:
                     debounce = short_debounce
                     system_control.send(key_press)
 
-                keys[k].set_led(0, 0, 0)
+                #keys[k].set_led(0, 0, 0)
 
     # If enough time has passed, reset the fired variable
     if fired and time.monotonic() - keybow.time_of_last_press > debounce:
