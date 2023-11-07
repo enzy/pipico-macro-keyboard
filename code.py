@@ -187,7 +187,7 @@ count = 0
 # refiring on a single key press, the debounce time for the strings has to be
 # longer.
 
-short_debounce = 0.03
+short_debounce = 0.05
 long_debounce = 0.15
 debounce = 0.03
 fired = False
